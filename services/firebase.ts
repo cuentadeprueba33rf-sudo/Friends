@@ -1,8 +1,6 @@
 import { initializeApp, type FirebaseApp } from "firebase/app";
 import { 
   getAuth, 
-  GoogleAuthProvider, 
-  signInWithPopup, 
   signOut as signOutFirebase, 
   onAuthStateChanged,
   createUserWithEmailAndPassword,
@@ -42,8 +40,6 @@ const app: FirebaseApp = initializeApp(firebaseConfig);
 const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
 
-const googleProvider = new GoogleAuthProvider();
-
 export const createUserProfileDocument = async (userAuth: FirebaseUser, additionalData?: object) => {
   if (!userAuth) return;
 
@@ -73,16 +69,6 @@ export const createUserProfileDocument = async (userAuth: FirebaseUser, addition
     }
   }
   return userRef;
-};
-
-
-export const signInWithGoogle = async (): Promise<void> => {
-  try {
-    const { user } = await signInWithPopup(auth, googleProvider);
-    await createUserProfileDocument(user);
-  } catch (error) {
-    console.error("Error signing in with Google: ", error);
-  }
 };
 
 export const signOut = (): Promise<void> => {
