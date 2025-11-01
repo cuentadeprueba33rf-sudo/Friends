@@ -13,13 +13,25 @@ const useAuth = (): AuthState => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        const profile = await fetchUserProfile(firebaseUser.uid);
-        setUser({ ...firebaseUser, ...profile } as User);
-      } else {
-        setUser(null);
+      try {
+        if (firebaseUser) {
+          const profile = await fetchUserProfile(firebaseUser.uid);
+          setUser({ ...firebaseUser, ...profile } as User);
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error("Error fetching user profile during auth state change:", error);
+        // Still log the user in with basic info from firebaseUser,
+        // but profile-specific data will be missing.
+        if (firebaseUser) {
+          setUser(firebaseUser as User); 
+        } else {
+          setUser(null);
+        }
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => unsubscribe();

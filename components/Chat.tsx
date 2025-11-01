@@ -54,15 +54,23 @@ const HomePage: React.FC<HomePageProps> = ({ currentUser }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
-    const usersCollection = collection(db, 'users');
-    const userSnapshot = await getDocs(usersCollection);
-    const userList = userSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
-    setUsers(userList);
-    setFilteredUsers(userList);
-    setLoading(false);
+    setError(null);
+    try {
+        const usersCollection = collection(db, 'users');
+        const userSnapshot = await getDocs(usersCollection);
+        const userList = userSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as User));
+        setUsers(userList);
+        setFilteredUsers(userList);
+    } catch (err) {
+        console.error("Error fetching user list:", err);
+        setError("Could not load hub members. This might be a permissions issue.");
+    } finally {
+        setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -103,6 +111,13 @@ const HomePage: React.FC<HomePageProps> = ({ currentUser }) => {
         <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-bold text-slate-200 mb-6">Hub Members</h2>
             
+            {error && (
+              <div className="bg-red-500/10 border border-red-500 text-red-400 px-4 py-3 rounded-lg relative mb-6" role="alert">
+                <strong className="font-bold">Error: </strong>
+                <span className="block sm:inline">{error}</span>
+              </div>
+            )}
+
             {/* Admin Panel */}
             {currentUser.isAdmin && (
                 <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 mb-8">
@@ -130,8 +145,8 @@ const HomePage: React.FC<HomePageProps> = ({ currentUser }) => {
             {/* User List */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {loading ? (
-                <p>Loading users...</p>
-              ) : (
+                <p className="text-slate-400 col-span-full">Loading users...</p>
+              ) : filteredUsers.length > 0 ? (
                 filteredUsers.map(user => (
                   <div key={user.uid} className="bg-slate-800 p-4 rounded-lg border border-slate-700 flex items-center gap-4">
                      <img src={user.photoURL || `https://api.dicebear.com/8.x/bottts/svg?seed=${user.uid}`} alt={user.displayName || 'User'} className="w-12 h-12 rounded-full" />
@@ -144,6 +159,8 @@ const HomePage: React.FC<HomePageProps> = ({ currentUser }) => {
                      </div>
                   </div>
                 ))
+              ) : (
+                !error && <p className="text-slate-400 col-span-full">No users found.</p>
               )}
             </div>
         </div>

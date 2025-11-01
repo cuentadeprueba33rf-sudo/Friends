@@ -23,6 +23,7 @@ import {
   updateDoc,
   type Firestore,
   serverTimestamp,
+  enableIndexedDbPersistence
 } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -39,6 +40,18 @@ const firebaseConfig = {
 const app: FirebaseApp = initializeApp(firebaseConfig);
 const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
+
+// Enable offline persistence
+enableIndexedDbPersistence(db)
+  .then(() => console.log("Firestore offline persistence enabled."))
+  .catch((err) => {
+    if (err.code == 'failed-precondition') {
+      console.warn('Firestore persistence failed: multiple tabs open. Offline features may be limited.');
+    } else if (err.code == 'unimplemented') {
+      console.warn('Firestore persistence not available in this browser. The app will not work offline.');
+    }
+  });
+
 
 export const createUserProfileDocument = async (userAuth: FirebaseUser, additionalData?: object) => {
   if (!userAuth) return;
